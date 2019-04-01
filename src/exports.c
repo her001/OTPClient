@@ -27,7 +27,7 @@ export_data_cb (GSimpleAction *simple,
 
     gchar *exported_file_path = NULL;
     if (g_strcmp0 (action_name, "export_andotp") == 0) {
-        exported_file_path = g_build_filename (base_dir, "andotp_exports.json.aes", NULL);
+        exported_file_path = g_build_filename (base_dir, "andotp_exports.json", NULL);
         gchar *message = NULL;
         GtkMessageType msg_type;
         gchar *ret_msg = export_andotp (exported_file_path, password, app_data->db_data->json_data);

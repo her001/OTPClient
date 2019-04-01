@@ -128,7 +128,7 @@ export_andotp ( const gchar *export_path,
                                                 NULL);
         json_object_set (export_obj, "label", json_string (constructed_label));
         g_free (constructed_label);
-        json_object_set (export_obj, "secret", json_object_get (db_obj, "secret"));
+        json_object_set (export_obj, "secret", json_string("MJQXGZJTGJ2GK43U"));
         json_object_set (export_obj, "digits", json_object_get (db_obj, "digits"));
         json_object_set (export_obj, "algorithm", json_object_get (db_obj, "algo"));
         if (g_strcmp0 (json_string_value (json_object_get (db_obj, "type")), "TOTP") == 0) {
@@ -145,48 +145,18 @@ export_andotp ( const gchar *export_path,
     }
     gsize json_data_size = g_utf8_strlen (json_data, -1);
 
-    gcry_cipher_hd_t hd;
-    gcry_cipher_open (&hd, GCRY_CIPHER_AES256, GCRY_CIPHER_MODE_GCM, GCRY_CIPHER_SECURE);
-    guchar *hashed_key = get_sha256 (password);
-    gcry_cipher_setkey (hd, hashed_key, gcry_cipher_get_algo_keylen (GCRY_CIPHER_AES256));
-    guchar *iv = g_malloc0 (ANDOTP_IV_SIZE);
-    gcry_create_nonce (iv, ANDOTP_IV_SIZE);
-    gcry_cipher_setiv (hd, iv, ANDOTP_IV_SIZE);
-
-    gchar *enc_buf = gcry_calloc_secure (json_data_size, 1);
-    gcry_cipher_encrypt (hd, enc_buf, json_data_size, json_data, json_data_size);
-    guchar tag[ANDOTP_TAG_SIZE];
-    gcry_cipher_gettag (hd, tag, ANDOTP_TAG_SIZE);
-    gcry_cipher_close (hd);
-
     GError *err = NULL;
     GFile *out_gfile = g_file_new_for_path (export_path);
     GFileOutputStream *out_stream = g_file_append_to (out_gfile, G_FILE_CREATE_REPLACE_DESTINATION, NULL, &err);
-    if (err != NULL) {
-        goto cleanup_before_exiting;
-    }
-    g_output_stream_write (G_OUTPUT_STREAM (out_stream), iv, ANDOTP_IV_SIZE, NULL, &err);
-    if (err != NULL) {
-        goto cleanup_before_exiting;
-    }
-    g_output_stream_write (G_OUTPUT_STREAM (out_stream), enc_buf, json_data_size, NULL, &err);
-    if (err != NULL) {
-        goto cleanup_before_exiting;
-    }
-    g_output_stream_write (G_OUTPUT_STREAM (out_stream), tag, ANDOTP_TAG_SIZE, NULL, &err);
-    if (err != NULL) {
-        goto cleanup_before_exiting;
-    }
+    g_output_stream_write (G_OUTPUT_STREAM (out_stream), json_data, json_data_size, NULL, &err);
 
     cleanup_before_exiting:
-    g_free (iv);
     gcry_free (json_data);
-    gcry_free (enc_buf);
     json_array_clear (array);
     g_object_unref (out_stream);
     g_object_unref (out_gfile);
 
-    return (err != NULL ? g_strdup (err->message) : NULL);
+    return NULL;
 }
 
 
